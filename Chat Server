@@ -1,0 +1,91 @@
+/*
+A simple Chat application using SharedMemory implementing the concepts of Inter Process Communication.
+*/
+//User 1
+#include <string.h>
+#include<stdio.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include<sys/mman.h>
+#include<sys/shm.h>
+#include<sys/stat.h>
+#include<fcntl.h>
+
+   struct memory
+   {
+        char buffer[100];
+        int pid1,pid2,flag;
+   };
+
+int main()
+{
+   struct memory *ptr;
+   const char *name = "Nandu";
+   int pid=getpid();
+   int id,item;
+   id=shm_open(name,O_CREAT|O_RDWR,0666);
+   ftruncate(id,sizeof(struct memory));
+   ptr=(struct memory *)mmap(NULL,sizeof(struct memory),PROT_WRITE|PROT_READ,MAP_SHARED,id,0);
+   ptr->pid1=pid;
+   while(1)
+   {
+        while(ptr->flag!=0);
+        printf("User 2:");
+        fputs(ptr->buffer,stdout);
+        printf("User 1:");
+        fgets(ptr->buffer,100,stdin);
+        if(strcmp(ptr->buffer,"exit\n")==0||strcmp(ptr->buffer,"exit")==0)
+        {
+           exit(0);
+        }
+        ptr->flag=1;
+   }
+   shm_unlink(name);
+   return 0;
+
+}
+//user 2
+/*Run using another terminal
+
+#include <string.h>
+#include<stdio.h>
+#include<stdlib.h>
+//#include<sys/ipc.h>
+#include<unistd.h>
+#include<sys/mman.h>
+#include<sys/shm.h>
+#include<sys/stat.h>
+#include<fcntl.h>
+
+   struct memory
+   {
+        char buffer[100];
+        int pid1,pid2,flag;
+   };
+
+int main()
+{
+   struct memory *ptr;
+   const char *name = "Nandu";
+   int pid=getpid();
+   int id,item;
+   id=shm_open(name,O_CREAT|O_RDWR,0666);
+   ftruncate(id,sizeof(struct memory));
+   ptr=(struct memory *)mmap(NULL,sizeof(struct memory),PROT_WRITE|PROT_READ,MAP_SHARED,id,0);
+   ptr->pid2=pid;
+   while(1)
+   {
+        while(ptr->flag!=1);
+        printf("User 1:");
+        fputs(ptr->buffer,stdout);
+        printf("User 2:");
+        fgets(ptr->buffer,100,stdin);
+        if(strcmp(ptr->buffer,"exit\n")==0||strcmp(ptr->buffer,"exit")==0)
+        {
+           exit(0);
+        }
+        ptr->flag=0;
+   }
+   shm_unlink(name);
+   return 0;
+}
