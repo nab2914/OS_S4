@@ -1,0 +1,105 @@
+/*
+This algorithm can be described as follows:
+1. Let Work and Finish be vectors of length m and n, respectively. Initialize
+Work = Available and Finish[i] = false for i = 0, 1, ..., n − 1.
+2. Find an index i such that both
+a. Finish[i] == false
+b. Needi ≤ Work
+If no such i exists, go to step 4.
+3. Work = Work + Allocationi
+Finish[i] = true
+Go to step 2.
+4. If Finish[i] == true for all i, then the system is in a safe state.
+This algorithm may require an order of m × n2 operations to determine whether
+a state is safe.
+*/
+
+#include<stdio.h>
+#include<stdbool.h>
+#define maxp 100
+#define maxr 100
+int available[maxr],max[maxp][maxr],safeseq[maxp],allocation[maxp][maxr],need[maxp][maxr],nump,numr;
+bool finish[maxp];
+
+bool isSafeState()
+{
+   int work[numr];int i,j;
+   for(i=0;i<numr;i++)
+      work[i]=available[i];
+   for(i=0;i<nump;i++)
+        finish[i]=false;
+
+   int count =0;
+   while(count < nump)
+   {
+        bool found = false;
+        for(i=0;i<nump;i++)
+        {
+           if(!finish[i])
+           {
+                bool can_allocate=true;
+                for(j=0;j<numr;j++)
+                {
+                   if(need[i][j]>work[j])
+                   {
+                        can_allocate=false;
+                        break;
+                   }
+                }
+                if(can_allocate)
+                {
+                   for(j=0;j<numr;j++)
+                   {
+                        work[j]+=allocation[i][j];
+                   }
+                   finish[i]=true;
+                   found=true;
+                   safeseq[count]=i;
+                   count++;
+                }
+
+           }
+        }
+        if(!found)
+                break;
+   }
+
+        return count==nump;
+}
+int main()
+{
+   int i,j;
+   printf("Enter the number of Processes: ");
+   scanf("%d",&nump);
+   printf("Enter the number of resources");
+   scanf("%d",&numr);
+   printf("Enter the available resources :");
+   for(i=0;i<numr;i++){
+        scanf("%d",&available[i]);}
+   printf("Enter the maximum resources each process can claim :");
+   for(i=0;i<nump;i++)
+      for(j=0;j<numr;j++)
+          scanf("%d",&max[i][j]);
+   printf("Enter the allocated resources can claim :");
+         for(i=0;i<nump;i++)
+           for(j=0;j<numr;j++)
+            scanf("%d",&allocation[i][j]);
+
+         for(i=0;i<nump;i++)
+           for(j=0;j<numr;j++)
+                need[i][j]=max[i][j]-allocation[i][j];
+
+        if(isSafeState())
+        {
+                printf("Safe");
+                printf("Safe Sequence:  \n");
+                for(i=0;i<nump;i++)
+                   printf("P%d\n",safeseq[i]);
+        }
+        else
+                printf("Unsafe");
+        return 0;
+}
+
+
+
