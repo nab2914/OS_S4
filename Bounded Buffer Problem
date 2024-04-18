@@ -1,0 +1,95 @@
+/*
+sample implementation of the producer consumer problem using semaphores
+*/
+3 Semaphore Variables
+mutex : a binary semaphore,acquire and release locks
+empty : -counting semaphore initial value=no: of slots
+full  : a counting semaphore initial value =0
+*/
+//A pseuodocode of the same
+/*
+void producer()
+{
+   do
+   {
+        wait(empty);
+        wait(mutex);
+        //add data to buffer
+        signal(mutex);
+        signal(full);
+   }while(TRUE);
+}
+void consumer()
+{
+   do
+   {
+        wait(full);
+        wait(mutex);
+        //add data to buffer
+        signal(mutex);
+        signal(empty);
+   }while(TRUE);
+}
+*/
+#include<stdio.h>
+#include<stdlib.h>
+#include<pthread.h>
+#include<semaphore.h>
+
+#define buffer_size 5
+
+sem_t empty,full,mutex;
+int buffer[buffer_size];
+int in=0,out=0;
+
+void * producer(void *arg)
+{
+   while(1)
+   {
+        int item=rand() % 100;
+        sem_wait(&empty);
+        sem_wait(&mutex);
+
+        buffer[in]=item;
+        printf("produced%d",item);
+        in++;
+        //s++;
+
+        sem_post(&mutex);
+        sem_post(&full);
+   }
+}
+
+void * consumer(void *abc)
+{
+   while(1)
+   {
+        int item;
+       sem_wait(&full);
+        sem_wait(&mutex);
+        //s++;
+        item=buffer[out];
+        printf("consumed%d",item);
+        out--;
+
+        sem_post(&mutex);
+        sem_post(&empty);
+   }
+}
+void main()
+{
+   sem_init(&empty,0,buffer_size);
+   sem_init(&full,0,0);
+   sem_init(&mutex,0,1);
+
+   pthread_t producer_thread,consumer_thread;
+   pthread_create(&producer_thread,NULL,producer,NULL);
+      pthread_create(&consumer_thread,NULL,consumer,NULL);
+
+   pthread_join(producer_thread,NULL);
+      pthread_join(consumer_thread,NULL);
+
+   sem_destroy(&empty);
+   sem_destroy(&full);
+   sem_destroy(&mutex);
+}
