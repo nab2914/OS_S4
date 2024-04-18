@@ -1,0 +1,106 @@
+/*
+//reader section
+do
+{
+   wait(mutex);
+   readcnt++;
+
+   if(readcnt==1)
+        wait(wrt);
+        signal(mutex);
+        //performs reading
+        wait(mutex);
+        readcnt--;
+
+        if(readcnt==0)
+        {
+           signal(wrt);
+           signal(mutex);
+        }
+}while(1);
+//writer section
+do
+{
+   writer requests for critical section
+   wait(wrt);
+   //performs writing
+   signal(wrt);
+   }while(1);
+}
+*/
+#include<stdio.h>
+#include<stdlib.h>
+#include<pthread.h>
+#include<semaphore.h>
+#include <string.h>
+#define max_buff_size 256
+#define filename "output.txt"
+sem_t mutex,wrt;
+int readcnt=0;
+FILE *file;
+char buffer[max_buff_size];
+void *reader(void * arg)
+{
+ //  char buffer[max_buff_size];
+   while(1)
+   {
+        sem_wait(&mutex);
+        readcnt++;
+        if(readcnt==1)
+        {
+           sem_wait(&wrt);
+        }
+        sem_post(&mutex);
+        printf("Enter text to write to a file\n");
+        fgets(buffer,max_buff_size,stdin);
+        if (strcmp(buffer, "exit\n") == 0 || strcmp(buffer, "exit") == 0)
+        {
+                exit(0);
+        }
+        sem_wait(&mutex);
+        readcnt--;
+        if(readcnt==0)
+        {
+           sem_post(&wrt);
+        }
+        sem_post(&mutex);
+        fputs(buffer,file);
+        fflush(file);
+   }
+   return NULL;
+}
+void *Writer(void * arg)
+{
+   file=fopen(filename,"w");
+   if(file==NULL)
+   {
+        perror("Error");
+        return NULL;
+   }
+
+   while(1)
+   {
+        sem_wait(&wrt);
+        //fprintf(file,"%s",buffer);
+        //fflush(file);
+        sem_post(&wrt);
+   }
+    return NULL;
+}
+int main()
+{
+   pthread_t reader_th,writer_th;
+   sem_init(&mutex,0,1);
+   sem_init(&wrt,0,1);
+
+   pthread_create(&reader_th,NULL,reader,NULL);
+   pthread_create(&writer_th,NULL,Writer,NULL);
+
+   pthread_join(reader_th,NULL);
+   pthread_join(writer_th,NULL);
+
+   sem_destroy(&mutex);
+   sem_destroy(&wrt);
+   return 0;
+}
+
